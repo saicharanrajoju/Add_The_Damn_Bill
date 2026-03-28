@@ -65,64 +65,97 @@ function CameraModal({ onCapture, onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black flex flex-col"
+      className="fixed inset-0 z-50 bg-black"
     >
-      {/* Top bar */}
-      <div className="flex items-center justify-between p-4 pt-safe">
-        <button onClick={onClose} aria-label="Close camera" className="p-2.5 rounded-full bg-white/10 text-white">
-          <X size={18} />
+      {/* Full-screen video — always behind everything */}
+      {!camError && (
+        <>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            onCanPlay={() => setReady(true)}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ display: captured ? 'none' : 'block' }}
+          />
+          {captured && (
+            <img
+              src={captured.url}
+              className="absolute inset-0 w-full h-full object-contain bg-black"
+              alt="Captured"
+            />
+          )}
+          <canvas ref={canvasRef} className="hidden" />
+        </>
+      )}
+
+      {/* Error state */}
+      {camError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-8 text-center">
+          <p className="text-white/70 text-sm">{camError}</p>
+          <button onClick={onClose} className="mt-2 px-5 py-2.5 rounded-full bg-white/10 text-white text-sm">
+            Close
+          </button>
+        </div>
+      )}
+
+      {/* Top controls — overlaid on video */}
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 pt-10"
+           style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)' }}>
+        <button
+          onClick={onClose}
+          aria-label="Close camera"
+          className="w-11 h-11 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white"
+        >
+          <X size={20} />
         </button>
         {!captured && !camError && (
-          <button onClick={flipCamera} aria-label="Flip camera" className="p-2.5 rounded-full bg-white/10 text-white">
-            <RefreshCcw size={18} />
+          <button
+            onClick={flipCamera}
+            aria-label="Flip camera"
+            className="w-11 h-11 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white"
+          >
+            <RefreshCcw size={20} />
           </button>
         )}
       </div>
 
-      {/* Viewfinder */}
-      <div className="flex-1 relative overflow-hidden bg-black">
-        {camError ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3 px-8 text-center">
-            <p className="text-white/70 text-sm">{camError}</p>
-          </div>
-        ) : (
-          <>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              onCanPlay={() => setReady(true)}
-              className={`w-full h-full object-cover ${captured ? 'hidden' : ''}`}
-            />
-            {captured && (
-              <img src={captured.url} className="w-full h-full object-contain" alt="Captured" />
-            )}
-            <canvas ref={canvasRef} className="hidden" />
-          </>
-        )}
-      </div>
-
-      {/* Bottom controls */}
-      <div className="flex items-center justify-center gap-6 py-8 px-6 bg-black pb-safe">
-        {!captured && !camError ? (
-          <button
-            onClick={capturePhoto}
-            disabled={!ready}
-            aria-label="Capture photo"
-            className="w-16 h-16 rounded-full bg-white border-[3px] border-white/40 shadow-lg active:scale-95 transition-transform disabled:opacity-30"
-          />
-        ) : captured ? (
-          <>
-            <button onClick={retake} className="flex-1 py-3 rounded-2xl bg-white/10 text-white text-sm font-medium">
-              Retake
+      {/* Bottom controls — overlaid on video */}
+      {!camError && (
+        <div
+          className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-6 px-8 pb-12 pt-16"
+          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55), transparent)' }}
+        >
+          {!captured ? (
+            /* Shutter button */
+            <button
+              onClick={capturePhoto}
+              disabled={!ready}
+              aria-label="Capture photo"
+              className="w-20 h-20 rounded-full border-4 border-white/80 flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30"
+            >
+              <div className="w-14 h-14 rounded-full bg-white" />
             </button>
-            <button onClick={usePhoto} className="flex-1 py-3 rounded-2xl bg-white text-black text-sm font-semibold">
-              Use Photo
-            </button>
-          </>
-        ) : null}
-      </div>
+          ) : (
+            /* Retake / Use */
+            <>
+              <button
+                onClick={retake}
+                className="flex-1 py-3.5 rounded-2xl bg-black/50 backdrop-blur-sm border border-white/20 text-white text-sm font-medium"
+              >
+                Retake
+              </button>
+              <button
+                onClick={usePhoto}
+                className="flex-1 py-3.5 rounded-2xl bg-white text-black text-sm font-semibold"
+              >
+                Use Photo
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }
